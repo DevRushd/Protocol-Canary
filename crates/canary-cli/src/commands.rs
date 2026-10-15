@@ -10,7 +10,7 @@ use canary_git::{collect_git_context, CliGitRepository};
 use canary_report::{
     JsonReporter, MarkdownReporter, NetworkSummary, ProjectSummary, ReportInput, TerminalReporter,
 };
-use canary_rpc::{validate_network_info, HttpRpcClient, RpcClient, RpcError};
+use canary_rpc::{validate_network_info, HttpRpcClient, RetryPolicy, RpcClient, RpcError};
 use canary_runner::EnabledSurfaces;
 
 use crate::cli::{CheckArgs, FixturesArgs, InspectArgs, OutputFormat, ReportArgs};
@@ -191,7 +191,11 @@ async fn run_check_inner(args: CheckArgs) -> Result<ExitCode, CanaryError> {
         //   target-protocol run against a not-yet-upgraded network is a
         //   core upgrade-rehearsal use case, but it must be visible
         //   rather than only an annotation in the report.
-        let client = HttpRpcClient::new(rpc_url.clone());
+        let client =
+            HttpRpcClient::new(rpc_url.clone()).with_retry_policy(RetryPolicy::from_retries(
+                args.rpc_max_retries,
+                std::time::Duration::from_millis(args.rpc_retry_delay_ms),
+            ));
         let (observed_protocol, network_error) = match client.get_network().await {
             Ok(info) => {
                 if let Err(err) = validate_network_info(&info, &passphrase, target_protocol.0) {
@@ -283,6 +287,8 @@ async fn run_check_inner(args: CheckArgs) -> Result<ExitCode, CanaryError> {
             quiet: args.quiet,
             max_concurrency: args.max_concurrency,
             rpc_timeout: args.rpc_timeout,
+            rpc_max_retries: args.rpc_max_retries,
+            rpc_retry_delay_ms: args.rpc_retry_delay_ms,
         },
     };
 
