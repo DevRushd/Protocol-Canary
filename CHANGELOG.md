@@ -17,6 +17,12 @@ All notable changes to this project are documented in this file.
 - A strict parser and deterministic serializer for `.stellar-canary.lock`
   (CF-03) in `canary-config`: `load_lock`, `parse_lock` and `serialize_lock`.
   No command reads or writes a lockfile yet.
+- `--network-passphrase <PASSPHRASE>` on `check`: the passphrase the run
+  verifies the endpoint's `getNetwork` identity against (and would sign
+  with). It overrides the well-known passphrase for `--network` and is
+  what makes a custom or private network verifiable at all; an empty
+  value is rejected as an argument validation error (exit `2`), because
+  an empty expected passphrase is how validation skips the comparison.
 
 ### Changed
 
