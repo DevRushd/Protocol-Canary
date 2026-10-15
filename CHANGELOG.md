@@ -17,6 +17,11 @@ All notable changes to this project are documented in this file.
 - A strict parser and deterministic serializer for `.stellar-canary.lock`
   (CF-03) in `canary-config`: `load_lock`, `parse_lock` and `serialize_lock`.
   No command reads or writes a lockfile yet.
+- `stellar-canary report -` reads report JSON from standard input until
+  EOF, so `check --json | report -` chains without an intermediate file.
+  The stream is capped at 10 MiB (D-06) and an oversized input fails with
+  an explicit input-too-large error instead of being buffered whole or
+  silently truncated; reading a regular path is unchanged.
 
 ### Changed
 
