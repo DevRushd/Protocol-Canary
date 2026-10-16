@@ -178,10 +178,14 @@ async fn deterministic_json_rpc_errors_are_not_retried() {
         .get_network()
         .await
         .expect_err("the endpoint answers with a JSON-RPC error");
-    assert!(
-        matches!(err, RpcError::JsonRpcError { code: -32601, .. }),
-        "unexpected error: {err}"
-    );
+    // -32601 is classified as the missing-capability diagnostic; whatever
+    // the classification, a JSON-RPC `error` object is deterministic and
+    // must come back on the first attempt.
+    match &err {
+        RpcError::MethodNotAvailable { method } => assert_eq!(method, "getNetwork"),
+        other => panic!("expected MethodNotAvailable, got {other:?}"),
+    }
+    assert!(err.to_string().contains("-32601"), "{err}");
     assert_eq!(
         request_count(&server).await,
         1,
