@@ -26,8 +26,13 @@ pub async fn execute(
     rpc_endpoint: &str,
 ) -> Vec<CompatibilityResult> {
     let concurrency = context.options.max_concurrency.max(1) as usize;
+    // `verbose` also switches on per-attempt RPC logging in the client:
+    // one stderr line per attempt with its count and duration, with the
+    // endpoint URL scrubbed (CF-08 section 3.5). Off by default, so
+    // non-verbose runs emit nothing new.
     let client = HttpRpcClient::new(rpc_endpoint.to_string())
         .with_timeout(std::time::Duration::from_secs(context.options.rpc_timeout))
+        .with_verbose(context.options.verbose)
         .with_retry_policy(RetryPolicy::from_retries(
             context.options.rpc_max_retries,
             std::time::Duration::from_millis(context.options.rpc_retry_delay_ms),
